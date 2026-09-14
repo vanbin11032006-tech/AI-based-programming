@@ -1,0 +1,11 @@
+dao\MySQLStudentDAO.class
+entity\Course.class
+Main.class
+dao\MySQLCourseDAO.class
+dao\MockStudentDAO.class
+dao\MockCourseDAO.class
+dao\StudentDAO.class
+service\StudentService.class
+dao\CourseDAO.class
+service\CourseService.class
+entity\Student.class
