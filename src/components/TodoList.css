@@ -1,0 +1,30 @@
+.todo-list {
+  padding: 0;
+  margin: 0 0 20px 0;
+}
+
+.todo-list__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  background-color: var(--bg-hover);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+}
+
+.todo-list__empty-icon {
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.todo-list__empty-text {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  max-width: 400px;
+  line-height: 1.5;
+  margin: 0;
+}

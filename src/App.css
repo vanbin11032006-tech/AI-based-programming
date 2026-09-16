@@ -1,0 +1,105 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+  min-height: 100vh;
+}
+
+.todo-app-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 16px;
+  min-height: 100vh;
+}
+
+.todo-app-card {
+  width: 100%;
+  max-width: 680px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  padding: 32px;
+  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.todo-app__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.todo-app__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.todo-app__logo {
+  color: var(--accent-color);
+}
+
+.todo-app__title {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.todo-app__subtitle {
+  margin: 4px 0 0 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.todo-app__theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.todo-app__theme-toggle:hover {
+  background-color: var(--accent-light);
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+@media (max-width: 640px) {
+  .todo-app-page {
+    padding: 16px 8px;
+  }
+
+  .todo-app-card {
+    padding: 20px 16px;
+  }
+
+  .todo-app__title {
+    font-size: 1.3rem;
+  }
+
+  .todo-app__subtitle {
+    font-size: 0.75rem;
+  }
+}

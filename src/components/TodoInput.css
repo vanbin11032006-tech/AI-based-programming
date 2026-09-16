@@ -1,0 +1,99 @@
+.todo-input {
+  margin-bottom: 20px;
+}
+
+.todo-input__wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.todo-input__field {
+  flex: 1;
+  height: 48px;
+  padding: 0 16px;
+  font-size: 0.95rem;
+  font-family: var(--font-family);
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.todo-input__field:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.todo-input__field--error {
+  border-color: var(--danger-color);
+}
+
+.todo-input__field--error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+}
+
+.todo-input__select {
+  height: 48px;
+  padding: 0 12px;
+  font-size: 0.9rem;
+  font-family: var(--font-family);
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.todo-input__select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.todo-input__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 48px;
+  padding: 0 20px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: var(--font-family);
+  color: #ffffff;
+  background-color: var(--accent-color);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.todo-input__button:hover {
+  background-color: var(--accent-hover);
+}
+
+.todo-input__button:active {
+  transform: scale(0.98);
+}
+
+.todo-input__error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--danger-color);
+}
+
+@media (max-width: 640px) {
+  .todo-input__wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .todo-input__button {
+    justify-content: center;
+  }
+}

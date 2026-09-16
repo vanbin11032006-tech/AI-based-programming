@@ -1,0 +1,223 @@
+.todo-item {
+  list-style: none;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+  padding: 12px 16px;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.todo-item:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--accent-light);
+}
+
+.todo-item--completed {
+  background-color: var(--bg-hover);
+  opacity: 0.8;
+}
+
+.todo-item--completed .todo-item__title {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.todo-item__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.todo-item__left {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 1;
+}
+
+.todo-item__checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  background: var(--bg-input);
+  border: 2px solid var(--text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  color: #ffffff;
+  padding: 0;
+  transition: all var(--transition-fast);
+}
+
+.todo-item__checkbox:hover {
+  border-color: var(--accent-color);
+}
+
+.todo-item__checkbox--checked {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.todo-item__details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.todo-item__title {
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  word-break: break-word;
+  cursor: pointer;
+  user-select: none;
+}
+
+.todo-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+}
+
+.todo-item__priority {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 0.72rem;
+}
+
+.todo-item__priority--high {
+  background-color: var(--priority-high-bg);
+  color: var(--priority-high-text);
+}
+
+.todo-item__priority--medium {
+  background-color: var(--priority-medium-bg);
+  color: var(--priority-medium-text);
+}
+
+.todo-item__priority--low {
+  background-color: var(--priority-low-bg);
+  color: var(--priority-low-text);
+}
+
+.todo-item__date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-muted);
+}
+
+.todo-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.todo-item__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.todo-item__button--edit:hover {
+  color: var(--accent-color);
+  background-color: var(--accent-light);
+}
+
+.todo-item__button--delete:hover {
+  color: var(--danger-color);
+  background-color: var(--priority-high-bg);
+}
+
+.todo-item__button--save {
+  background-color: var(--success-color);
+  color: #ffffff;
+}
+
+.todo-item__button--save:hover {
+  opacity: 0.9;
+}
+
+.todo-item__button--cancel {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.todo-item__button--cancel:hover {
+  background-color: var(--bg-hover);
+}
+
+/* Edit Mode Container */
+.todo-item__edit-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.todo-item__edit-input {
+  flex: 1;
+  height: 38px;
+  padding: 0 12px;
+  font-size: 0.95rem;
+  font-family: var(--font-family);
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--accent-color);
+  border-radius: var(--radius-sm);
+}
+
+.todo-item__edit-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.todo-item__edit-select {
+  height: 38px;
+  padding: 0 8px;
+  font-size: 0.85rem;
+  font-family: var(--font-family);
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.todo-item__edit-actions {
+  display: flex;
+  gap: 4px;
+}
+
+@media (max-width: 640px) {
+  .todo-item__content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .todo-item__actions {
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+
+  .todo-item__edit-container {
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,136 @@
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Progress Bar Styles */
+.stats__progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stats__progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.stats__progress-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.stats__progress-percentage {
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.stats__progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--border-color);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.stats__progress-fill {
+  height: 100%;
+  background-color: var(--accent-color);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+/* Summary Grid */
+.stats__summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.stats__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background-color: var(--bg-hover);
+  border-radius: var(--radius-md);
+}
+
+.stats__number {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stats__label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.stats__item--active .stats__number {
+  color: var(--warning-color);
+}
+
+.stats__item--completed .stats__number {
+  color: var(--success-color);
+}
+
+/* Actions */
+.stats__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stats__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-font: var(--font-family);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.stats__button:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.stats__button--clear {
+  color: var(--danger-color);
+  border-color: var(--priority-high-bg);
+}
+
+.stats__button--clear:hover {
+  background-color: var(--priority-high-bg);
+  color: var(--danger-hover);
+}
+
+@media (max-width: 640px) {
+  .stats__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stats__button {
+    justify-content: center;
+  }
+}
