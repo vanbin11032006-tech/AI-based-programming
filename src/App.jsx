@@ -6,6 +6,7 @@ import { FilterBar } from './components/FilterBar';
 import { TodoList } from './components/TodoList';
 import { Stats } from './components/Stats';
 import { Sun, Moon, Dumbbell, ArrowUpRight, Play, RefreshCw } from 'lucide-react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import './styles/variables.css';
 import './App.css';
 
@@ -135,6 +136,7 @@ export function App() {
           </section>
         </main>
       </div>
+      <SpeedInsights />
     </div>
   );
 }
