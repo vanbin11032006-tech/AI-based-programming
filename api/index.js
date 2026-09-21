@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { ObjectId } from 'mongodb';
 import clientPromise from '../lib/mongodb.js';
+import { hashPassword, verifyPassword, generateToken, verifyToken } from '../lib/auth.js';
 
 const app = express();
 
@@ -9,40 +10,144 @@ app.use(cors());
 app.use(express.json());
 
 const DB_NAME = process.env.MONGODB_DB_NAME || 'todo_db';
-const COLLECTION_NAME = 'todos';
 
-async function getCollection() {
+async function getCollection(name = 'todos') {
   const client = await clientPromise;
-  return client.db(DB_NAME).collection(COLLECTION_NAME);
+  return client.db(DB_NAME).collection(name);
 }
 
-// Map MongoDB _id to frontend id
 function formatTodo(doc) {
   if (!doc) return null;
   const { _id, ...rest } = doc;
-  return {
-    id: _id.toString(),
-    ...rest,
-  };
+  return { id: _id.toString(), ...rest };
 }
 
-// 1. GET /api/todos - Lấy danh sách công việc
-app.get('/api/todos', async (req, res) => {
+// ---------------- AUTH ROUTES ----------------
+app.post('/api/auth/register', async (req, res) => {
   try {
-    const collection = await getCollection();
-    const todos = await collection.find({}).sort({ createdAt: -1 }).toArray();
-    res.json(todos.map(formatTodo));
+    const { username, email, password } = req.body || {};
+
+    if (!username || !username.trim()) {
+      return res.status(400).json({ error: 'Tên người dùng không được để trống' });
+    }
+    if (!email || !email.trim() || !email.includes('@')) {
+      return res.status(400).json({ error: 'Email không hợp lệ' });
+    }
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
+    }
+
+    const usersCollection = await getCollection('users');
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanUsername = username.trim();
+
+    const existingUser = await usersCollection.findOne({
+      $or: [{ email: cleanEmail }, { username: cleanUsername }],
+    });
+
+    if (existingUser) {
+      if (existingUser.email === cleanEmail) {
+        return res.status(400).json({ error: 'Email này đã được đăng ký' });
+      }
+      return res.status(400).json({ error: 'Tên người dùng này đã được sử dụng' });
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const newUser = {
+      username: cleanUsername,
+      email: cleanEmail,
+      password: hashedPassword,
+      createdAt: new Date().toISOString(),
+    };
+
+    const result = await usersCollection.insertOne(newUser);
+    const createdUser = { _id: result.insertedId, username: cleanUsername, email: cleanEmail };
+    const token = generateToken(createdUser);
+
+    res.status(201).json({
+      message: 'Đăng ký tài khoản thành công',
+      token,
+      user: { id: result.insertedId.toString(), username: cleanUsername, email: cleanEmail },
+    });
   } catch (error) {
-    console.error('Error fetching todos:', error);
-    res.status(500).json({ error: 'Lỗi khi lấy danh sách công việc từ MongoDB: ' + error.message });
+    res.status(500).json({ error: 'Lỗi server khi đăng ký: ' + error.message });
   }
 });
 
-// 2. POST /api/todos - Thêm công việc mới
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { emailOrUsername, password } = req.body || {};
+    if (!emailOrUsername?.trim() || !password) {
+      return res.status(400).json({ error: 'Vui lòng điền đầy đủ Email/Tên đăng nhập và Mật khẩu' });
+    }
+
+    const usersCollection = await getCollection('users');
+    const input = emailOrUsername.trim().toLowerCase();
+
+    const user = await usersCollection.findOne({
+      $or: [{ email: input }, { username: emailOrUsername.trim() }],
+    });
+
+    if (!user || !(await verifyPassword(password, user.password))) {
+      return res.status(401).json({ error: 'Email/Tên đăng nhập hoặc Mật khẩu không chính xác' });
+    }
+
+    const token = generateToken(user);
+    res.json({
+      message: 'Đăng nhập thành công',
+      token,
+      user: { id: user._id.toString(), username: user.username, email: user.email },
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Lỗi server khi đăng nhập: ' + error.message });
+  }
+});
+
+app.get('/api/auth/me', async (req, res) => {
+  try {
+    const decoded = verifyToken(req);
+    if (!decoded?.userId) {
+      return res.status(401).json({ error: 'Phiên đăng nhập không hợp lệ' });
+    }
+
+    const usersCollection = await getCollection('users');
+    const user = await usersCollection.findOne(
+      { _id: new ObjectId(decoded.userId) },
+      { projection: { password: 0 } }
+    );
+
+    if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng' });
+
+    res.json({
+      user: { id: user._id.toString(), username: user.username, email: user.email },
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Lỗi lấy thông tin người dùng: ' + error.message });
+  }
+});
+
+// ---------------- TODOS ROUTES ----------------
+app.get('/api/todos', async (req, res) => {
+  try {
+    const decoded = verifyToken(req);
+    const userId = decoded?.userId || 'anonymous';
+
+    const collection = await getCollection('todos');
+    const todos = await collection.find({ userId }).sort({ createdAt: -1 }).toArray();
+    res.json(todos.map(formatTodo));
+  } catch (error) {
+    console.error('Error fetching todos:', error);
+    res.status(500).json({ error: 'Lỗi khi lấy danh sách công việc từ MongoDB' });
+  }
+});
+
 app.post('/api/todos', async (req, res) => {
   try {
+    const decoded = verifyToken(req);
+    const userId = decoded?.userId || 'anonymous';
+
     const { title, priority = 'medium' } = req.body;
-    if (!title || typeof title !== 'string' || !title.trim()) {
+    if (!title?.trim()) {
       return res.status(400).json({ error: 'Tiêu đề công việc không được để trống' });
     }
 
@@ -50,29 +155,27 @@ app.post('/api/todos', async (req, res) => {
       title: title.trim(),
       completed: false,
       priority,
+      userId,
       createdAt: new Date().toISOString(),
     };
 
-    const collection = await getCollection();
+    const collection = await getCollection('todos');
     const result = await collection.insertOne(newTodo);
 
-    res.status(201).json({
-      id: result.insertedId.toString(),
-      ...newTodo,
-    });
+    res.status(201).json({ id: result.insertedId.toString(), ...newTodo });
   } catch (error) {
     console.error('Error adding todo:', error);
-    res.status(500).json({ error: 'Lỗi khi thêm công việc mới vào MongoDB: ' + error.message });
+    res.status(500).json({ error: 'Lỗi khi thêm công việc mới vào MongoDB' });
   }
 });
 
-// 3. PUT /api/todos/:id - Cập nhật công việc (Tiêu đề, trạng thái, độ ưu tiên)
 app.put('/api/todos/:id', async (req, res) => {
   try {
+    const decoded = verifyToken(req);
+    const userId = decoded?.userId || 'anonymous';
+
     const { id } = req.params;
-    if (!ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'ID không hợp lệ' });
-    }
+    if (!ObjectId.isValid(id)) return res.status(400).json({ error: 'ID không hợp lệ' });
 
     const { title, completed, priority } = req.body;
     const updateData = { updatedAt: new Date().toISOString() };
@@ -81,16 +184,14 @@ app.put('/api/todos/:id', async (req, res) => {
     if (typeof completed === 'boolean') updateData.completed = completed;
     if (priority) updateData.priority = priority;
 
-    const collection = await getCollection();
+    const collection = await getCollection('todos');
     const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(id) },
+      { _id: new ObjectId(id), userId },
       { $set: updateData },
       { returnDocument: 'after' }
     );
 
-    if (!result) {
-      return res.status(404).json({ error: 'Không tìm thấy công việc' });
-    }
+    if (!result) return res.status(404).json({ error: 'Không tìm thấy công việc' });
 
     res.json(formatTodo(result));
   } catch (error) {
@@ -99,11 +200,13 @@ app.put('/api/todos/:id', async (req, res) => {
   }
 });
 
-// 4. DELETE /api/todos/completed - Xóa tất cả công việc đã hoàn thành
 app.delete('/api/todos/completed', async (req, res) => {
   try {
-    const collection = await getCollection();
-    await collection.deleteMany({ completed: true });
+    const decoded = verifyToken(req);
+    const userId = decoded?.userId || 'anonymous';
+
+    const collection = await getCollection('todos');
+    await collection.deleteMany({ userId, completed: true });
     res.json({ success: true, message: 'Đã xóa tất cả công việc đã hoàn thành' });
   } catch (error) {
     console.error('Error clearing completed todos:', error);
@@ -111,17 +214,17 @@ app.delete('/api/todos/completed', async (req, res) => {
   }
 });
 
-// 5. PATCH /api/todos/toggle-all - Đánh dấu hoàn thành / chưa hoàn thành tất cả
 app.patch('/api/todos/toggle-all', async (req, res) => {
   try {
-    const { completed } = req.body;
-    if (typeof completed !== 'boolean') {
-      return res.status(400).json({ error: 'Trạng thái completed không hợp lệ' });
-    }
+    const decoded = verifyToken(req);
+    const userId = decoded?.userId || 'anonymous';
 
-    const collection = await getCollection();
+    const { completed } = req.body;
+    if (typeof completed !== 'boolean') return res.status(400).json({ error: 'Trạng thái completed không hợp lệ' });
+
+    const collection = await getCollection('todos');
     await collection.updateMany(
-      {},
+      { userId },
       { $set: { completed, updatedAt: new Date().toISOString() } }
     );
 
@@ -132,20 +235,18 @@ app.patch('/api/todos/toggle-all', async (req, res) => {
   }
 });
 
-// 6. DELETE /api/todos/:id - Xóa 1 công việc theo ID
 app.delete('/api/todos/:id', async (req, res) => {
   try {
+    const decoded = verifyToken(req);
+    const userId = decoded?.userId || 'anonymous';
+
     const { id } = req.params;
-    if (!ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'ID không hợp lệ' });
-    }
+    if (!ObjectId.isValid(id)) return res.status(400).json({ error: 'ID không hợp lệ' });
 
-    const collection = await getCollection();
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    const collection = await getCollection('todos');
+    const result = await collection.deleteOne({ _id: new ObjectId(id), userId });
 
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ error: 'Không tìm thấy công việc để xóa' });
-    }
+    if (result.deletedCount === 0) return res.status(404).json({ error: 'Không tìm thấy công việc để xóa' });
 
     res.json({ success: true, id });
   } catch (error) {

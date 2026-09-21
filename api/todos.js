@@ -1,4 +1,5 @@
 import clientPromise from '../lib/mongodb.js';
+import { verifyToken } from '../lib/auth.js';
 
 const DB_NAME = process.env.MONGODB_DB_NAME || 'todo_db';
 const COLLECTION_NAME = 'todos';
@@ -15,29 +16,32 @@ function formatTodo(doc) {
 }
 
 export default async function handler(req, res) {
-  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
   );
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  // Xác thực token (nếu có)
+  const decoded = verifyToken(req);
+  const userId = decoded?.userId || 'anonymous';
+
   try {
     const collection = await getCollection();
 
-    // 1. GET /api/todos - Lấy danh sách công việc
+    // 1. GET /api/todos - Lấy danh sách công việc của user tương ứng
     if (req.method === 'GET') {
-      const todos = await collection.find({}).sort({ createdAt: -1 }).toArray();
+      const todos = await collection.find({ userId }).sort({ createdAt: -1 }).toArray();
       return res.status(200).json(todos.map(formatTodo));
     }
 
-    // 2. POST /api/todos - Thêm công việc mới vào database todo_db
+    // 2. POST /api/todos - Thêm công việc mới gắn với userId
     if (req.method === 'POST') {
       const { title, priority = 'medium' } = req.body || {};
       if (!title || typeof title !== 'string' || !title.trim()) {
@@ -48,6 +52,7 @@ export default async function handler(req, res) {
         title: title.trim(),
         completed: false,
         priority,
+        userId,
         createdAt: new Date().toISOString(),
       };
 
@@ -58,7 +63,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. PATCH /api/todos - Đánh dấu hoàn thành / chưa hoàn thành tất cả
+    // 3. PATCH /api/todos - Đánh dấu completed tất cả công việc của user
     if (req.method === 'PATCH') {
       const { completed } = req.body || {};
       if (typeof completed !== 'boolean') {
@@ -66,15 +71,15 @@ export default async function handler(req, res) {
       }
 
       await collection.updateMany(
-        {},
+        { userId },
         { $set: { completed, updatedAt: new Date().toISOString() } }
       );
       return res.status(200).json({ success: true, completed });
     }
 
-    // 4. DELETE /api/todos - Xóa tất cả công việc completed
+    // 4. DELETE /api/todos - Xóa tất cả công việc completed của user
     if (req.method === 'DELETE') {
-      await collection.deleteMany({ completed: true });
+      await collection.deleteMany({ userId, completed: true });
       return res.status(200).json({ success: true, message: 'Đã xóa tất cả công việc đã hoàn thành' });
     }
 

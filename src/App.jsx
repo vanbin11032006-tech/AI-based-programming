@@ -1,16 +1,21 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTodos } from './hooks/useTodos';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useAuth } from './context/AuthContext';
+import { AuthModal } from './components/AuthModal';
 import { TodoInput } from './components/TodoInput';
 import { FilterBar } from './components/FilterBar';
 import { TodoList } from './components/TodoList';
 import { Stats } from './components/Stats';
-import { Sun, Moon, Dumbbell, ArrowUpRight, Play, RefreshCw } from 'lucide-react';
+import { Sun, Moon, Dumbbell, ArrowUpRight, Play, RefreshCw, User, LogOut, LogIn } from 'lucide-react';
 import './styles/variables.css';
 import './App.css';
 
 export function App() {
   const [theme, setTheme] = useLocalStorage('todo_app_theme', 'light');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const { user, logout } = useAuth();
 
   const {
     todos,
@@ -59,15 +64,41 @@ export function App() {
             <a href="#about">Về Forge</a>
           </nav>
 
-          <button
-            type="button"
-            className="todo-app__theme-toggle"
-            onClick={toggleTheme}
-            aria-label={`Chuyển sang giao diện ${theme === 'light' ? 'Tối (Dark)' : 'Sáng (Light)'}`}
-            title="Đổi chủ đề Giao diện"
-          >
-            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-          </button>
+          <div className="todo-app__header-right">
+            {user ? (
+              <div className="todo-app__user-badge">
+                <User size={14} color="var(--accent-color)" />
+                <span>{user.username}</span>
+                <button
+                  type="button"
+                  className="todo-app__logout-btn"
+                  onClick={logout}
+                  title="Đăng xuất"
+                  aria-label="Đăng xuất tài khoản"
+                >
+                  <LogOut size={14} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="todo-app__auth-btn"
+                onClick={() => setIsAuthModalOpen(true)}
+              >
+                <LogIn size={15} /> Đăng nhập
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="todo-app__theme-toggle"
+              onClick={toggleTheme}
+              aria-label={`Chuyển sang giao diện ${theme === 'light' ? 'Tối (Dark)' : 'Sáng (Light)'}`}
+              title="Đổi chủ đề Giao diện"
+            >
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+          </div>
         </header>
 
         <main>
@@ -87,7 +118,9 @@ export function App() {
           <section className="todo-app__workspace" id="schedule">
             <div className="todo-app__section-heading">
               <div>
-                <p className="todo-app__eyebrow"><span /> Kế hoạch cá nhân</p>
+                <p className="todo-app__eyebrow">
+                  <span /> {user ? `Kế hoạch của ${user.username}` : 'Kế hoạch cá nhân'}
+                </p>
                 <h2>HÔM NAY BẠN SẼ<br /><em>CHINH PHỤC</em> ĐIỀU GÌ?</h2>
               </div>
               <p className="todo-app__section-meta">01 / 04<br /><small>DAILY FOCUS</small></p>
@@ -135,6 +168,11 @@ export function App() {
           </section>
         </main>
       </div>
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </div>
   );
 }

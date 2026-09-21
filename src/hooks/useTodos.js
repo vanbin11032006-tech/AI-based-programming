@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE = '/api/todos';
 
@@ -7,16 +8,29 @@ export function useTodos() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const { token, user } = useAuth();
+
   const [filter, setFilter] = useState('all'); // 'all' | 'active' | 'completed'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date-desc'); // 'date-desc' | 'date-asc' | 'title-asc' | 'priority-desc'
+
+  const getAuthHeaders = useCallback(() => {
+    const headers = { 'Content-Type': 'application/json' };
+    const currentToken = token || localStorage.getItem('forge_auth_token');
+    if (currentToken) {
+      headers.Authorization = `Bearer ${currentToken}`;
+    }
+    return headers;
+  }, [token]);
 
   // 1. Fetch all todos from MongoDB API
   const fetchTodos = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(API_BASE);
+      const res = await fetch(API_BASE, {
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) throw new Error(`Lỗi từ Server (${res.status})`);
       const data = await res.json();
       setTodos(data);
@@ -26,7 +40,7 @@ export function useTodos() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [getAuthHeaders]);
 
   useEffect(() => {
     let isMounted = true;
@@ -34,7 +48,9 @@ export function useTodos() {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await fetch(API_BASE);
+        const currentToken = token || localStorage.getItem('forge_auth_token');
+        const headers = currentToken ? { Authorization: `Bearer ${currentToken}` } : {};
+        const res = await fetch(API_BASE, { headers });
         if (!res.ok) throw new Error(`Lỗi từ Server (${res.status})`);
         const data = await res.json();
         if (isMounted) setTodos(data);
@@ -49,7 +65,7 @@ export function useTodos() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [token, user]);
 
   // 2. Add new todo
   const addTodo = async (title, priority = 'medium') => {
@@ -59,7 +75,7 @@ export function useTodos() {
     try {
       const res = await fetch(API_BASE, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ title: trimmed, priority }),
       });
 
@@ -90,7 +106,7 @@ export function useTodos() {
     try {
       const res = await fetch(`${API_BASE}/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ completed: updatedStatus }),
       });
 
@@ -115,7 +131,7 @@ export function useTodos() {
     try {
       const res = await fetch(`${API_BASE}/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ title: trimmed, priority: newPriority }),
       });
 
@@ -133,13 +149,13 @@ export function useTodos() {
 
   // 5. Delete single todo
   const deleteTodo = async (id) => {
-    // Optimistic update
     const previousTodos = [...todos];
     setTodos((prev) => prev.filter((t) => t.id !== id));
 
     try {
       const res = await fetch(`${API_BASE}/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       });
 
       if (!res.ok) {
@@ -160,6 +176,7 @@ export function useTodos() {
     try {
       const res = await fetch(`${API_BASE}/completed`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       });
 
       if (!res.ok) {
@@ -180,7 +197,7 @@ export function useTodos() {
     try {
       const res = await fetch(`${API_BASE}/toggle-all`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ completed: shouldComplete }),
       });
 

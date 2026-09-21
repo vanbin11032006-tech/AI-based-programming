@@ -143,8 +143,63 @@ body {
   font-weight: 700;
 }
 
-.todo-app__retry-btn:hover {
-  background: #ef4444;
-  color: #fff;
+.todo-app__header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
+
+.todo-app__auth-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: var(--accent-color);
+  color: #141414;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.todo-app__auth-btn:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.todo-app__user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background-color: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.todo-app__logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  transition: color var(--transition-fast);
+}
+
+.todo-app__logout-btn:hover {
+  color: #ef4444;
+}
+
 

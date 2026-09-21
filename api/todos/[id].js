@@ -1,4 +1,5 @@
 import clientPromise from '../../lib/mongodb.js';
+import { verifyToken } from '../../lib/auth.js';
 import { ObjectId } from 'mongodb';
 
 const DB_NAME = process.env.MONGODB_DB_NAME || 'todo_db';
@@ -21,20 +22,23 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
   );
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+  const decoded = verifyToken(req);
+  const userId = decoded?.userId || 'anonymous';
+
   const { id } = req.query;
 
-  // Hỗ trợ xóa tất cả completed nếu id === 'completed'
+  // Hỗ trợ xóa tất cả completed của user nếu id === 'completed'
   if (id === 'completed' && req.method === 'DELETE') {
     try {
       const collection = await getCollection();
-      await collection.deleteMany({ completed: true });
+      await collection.deleteMany({ userId, completed: true });
       return res.status(200).json({ success: true, message: 'Đã xóa tất cả công việc đã hoàn thành' });
     } catch (error) {
       return res.status(500).json({ error: 'Lỗi server: ' + error.message });
@@ -48,7 +52,7 @@ export default async function handler(req, res) {
   try {
     const collection = await getCollection();
 
-    // 1. PUT /api/todos/[id] - Cập nhật công việc trong MongoDB
+    // 1. PUT /api/todos/[id] - Cập nhật công việc trong MongoDB (kiểm tra thuộc sở hữu userId)
     if (req.method === 'PUT') {
       const { title, completed, priority } = req.body || {};
       const updateData = { updatedAt: new Date().toISOString() };
@@ -58,13 +62,13 @@ export default async function handler(req, res) {
       if (priority) updateData.priority = priority;
 
       const result = await collection.findOneAndUpdate(
-        { _id: new ObjectId(id) },
+        { _id: new ObjectId(id), userId },
         { $set: updateData },
         { returnDocument: 'after' }
       );
 
       if (!result) {
-        return res.status(404).json({ error: 'Không tìm thấy công việc để sửa' });
+        return res.status(404).json({ error: 'Không tìm thấy công việc hoặc không có quyền chỉnh sửa' });
       }
 
       return res.status(200).json(formatTodo(result));
@@ -72,9 +76,9 @@ export default async function handler(req, res) {
 
     // 2. DELETE /api/todos/[id] - Xóa 1 công việc khỏi MongoDB
     if (req.method === 'DELETE') {
-      const result = await collection.deleteOne({ _id: new ObjectId(id) });
+      const result = await collection.deleteOne({ _id: new ObjectId(id), userId });
       if (result.deletedCount === 0) {
-        return res.status(404).json({ error: 'Không tìm thấy công việc để xóa' });
+        return res.status(404).json({ error: 'Không tìm thấy công việc hoặc không có quyền xóa' });
       }
       return res.status(200).json({ success: true, id });
     }
