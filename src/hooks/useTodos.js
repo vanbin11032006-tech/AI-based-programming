@@ -1,128 +1,212 @@
-import { useState, useMemo } from 'react';
-import { useLocalStorage } from './useLocalStorage';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 
-const INITIAL_TODOS = [
-  {
-    id: '1',
-    title: 'Học React Components & State Management',
-    completed: true,
-    createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-    priority: 'high',
-  },
-  {
-    id: '2',
-    title: 'Phân rã Component cho ứng dụng Todo List',
-    completed: true,
-    createdAt: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
-    priority: 'medium',
-  },
-  {
-    id: '3',
-    title: 'Áp dụng BEM CSS và Responsive Design',
-    completed: false,
-    createdAt: new Date().toISOString(),
-    priority: 'medium',
-  },
-  {
-    id: '4',
-    title: 'Thực hiện kiểm thử theo CHECKLIST.md',
-    completed: false,
-    createdAt: new Date().toISOString(),
-    priority: 'low',
-  },
-];
+const API_BASE = '/api/todos';
 
 export function useTodos() {
-  const [todos, setTodos] = useLocalStorage('todo_app_items_v1', INITIAL_TODOS);
+  const [todos, setTodos] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [filter, setFilter] = useState('all'); // 'all' | 'active' | 'completed'
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('date-desc'); // 'date-desc' | 'date-asc' | 'title-asc' | 'priority-desc'
 
-  // Add new todo
-  const addTodo = (title, priority = 'medium') => {
+  // 1. Fetch all todos from MongoDB API
+  const fetchTodos = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(API_BASE);
+      if (!res.ok) throw new Error(`Lỗi từ Server (${res.status})`);
+      const data = await res.json();
+      setTodos(data);
+    } catch (err) {
+      console.error('Fetch todos error:', err);
+      setError('Không thể kết nối đến MongoDB API. Vui lòng kiểm tra Server và MONGODB_URI.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(API_BASE);
+        if (!res.ok) throw new Error(`Lỗi từ Server (${res.status})`);
+        const data = await res.json();
+        if (isMounted) setTodos(data);
+      } catch (err) {
+        console.error('Fetch todos error:', err);
+        if (isMounted) setError('Không thể kết nối đến MongoDB API. Vui lòng kiểm tra Server và MONGODB_URI.');
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    loadData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 2. Add new todo
+  const addTodo = async (title, priority = 'medium') => {
     const trimmed = title.trim();
     if (!trimmed) return false;
 
-    const newTodo = {
-      id: Date.now().toString(),
-      title: trimmed,
-      completed: false,
-      createdAt: new Date().toISOString(),
-      priority,
-    };
+    try {
+      const res = await fetch(API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: trimmed, priority }),
+      });
 
-    setTodos((prev) => [newTodo, ...prev]);
-    return true;
+      if (!res.ok) throw new Error('Thêm công việc thất bại');
+      const createdTodo = await res.json();
+
+      setTodos((prev) => [createdTodo, ...prev]);
+      return true;
+    } catch (err) {
+      console.error('Add todo error:', err);
+      setError(err.message);
+      return false;
+    }
   };
 
-  // Toggle completed status
-  const toggleTodo = (id) => {
+  // 3. Toggle completed status
+  const toggleTodo = async (id) => {
+    const targetTodo = todos.find((t) => t.id === id);
+    if (!targetTodo) return;
+
+    const updatedStatus = !targetTodo.completed;
+
+    // Optimistic update
     setTodos((prev) =>
-      prev.map((todo) =>
-        todo.id === id
-          ? { ...todo, completed: !todo.completed, updatedAt: new Date().toISOString() }
-          : todo
-      )
+      prev.map((t) => (t.id === id ? { ...t, completed: updatedStatus } : t))
     );
+
+    try {
+      const res = await fetch(`${API_BASE}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: updatedStatus }),
+      });
+
+      if (!res.ok) {
+        // Revert on error
+        setTodos((prev) =>
+          prev.map((t) => (t.id === id ? { ...t, completed: !updatedStatus } : t))
+        );
+        throw new Error('Cập nhật trạng thái thất bại');
+      }
+    } catch (err) {
+      console.error('Toggle todo error:', err);
+      setError(err.message);
+    }
   };
 
-  // Edit todo title & priority
-  const editTodo = (id, newTitle, newPriority) => {
+  // 4. Edit todo title & priority
+  const editTodo = async (id, newTitle, newPriority) => {
     const trimmed = newTitle.trim();
     if (!trimmed) return false;
 
-    setTodos((prev) =>
-      prev.map((todo) =>
-        todo.id === id
-          ? {
-              ...todo,
-              title: trimmed,
-              priority: newPriority || todo.priority,
-              updatedAt: new Date().toISOString(),
-            }
-          : todo
-      )
-    );
-    return true;
+    try {
+      const res = await fetch(`${API_BASE}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: trimmed, priority: newPriority }),
+      });
+
+      if (!res.ok) throw new Error('Sửa công việc thất bại');
+      const updatedTodo = await res.json();
+
+      setTodos((prev) => prev.map((t) => (t.id === id ? updatedTodo : t)));
+      return true;
+    } catch (err) {
+      console.error('Edit todo error:', err);
+      setError(err.message);
+      return false;
+    }
   };
 
-  // Delete single todo
-  const deleteTodo = (id) => {
-    setTodos((prev) => prev.filter((todo) => todo.id !== id));
+  // 5. Delete single todo
+  const deleteTodo = async (id) => {
+    // Optimistic update
+    const previousTodos = [...todos];
+    setTodos((prev) => prev.filter((t) => t.id !== id));
+
+    try {
+      const res = await fetch(`${API_BASE}/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        setTodos(previousTodos);
+        throw new Error('Xóa công việc thất bại');
+      }
+    } catch (err) {
+      console.error('Delete todo error:', err);
+      setError(err.message);
+    }
   };
 
-  // Clear all completed todos
-  const clearCompleted = () => {
-    setTodos((prev) => prev.filter((todo) => !todo.completed));
+  // 6. Clear all completed todos
+  const clearCompleted = async () => {
+    const previousTodos = [...todos];
+    setTodos((prev) => prev.filter((t) => !t.completed));
+
+    try {
+      const res = await fetch(`${API_BASE}/completed`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        setTodos(previousTodos);
+        throw new Error('Xóa công việc đã hoàn thành thất bại');
+      }
+    } catch (err) {
+      console.error('Clear completed error:', err);
+      setError(err.message);
+    }
   };
 
-  // Toggle all todos
-  const toggleAll = (shouldComplete) => {
-    setTodos((prev) =>
-      prev.map((todo) => ({
-        ...todo,
-        completed: shouldComplete,
-        updatedAt: new Date().toISOString(),
-      }))
-    );
+  // 7. Toggle all todos
+  const toggleAll = async (shouldComplete) => {
+    const previousTodos = [...todos];
+    setTodos((prev) => prev.map((t) => ({ ...t, completed: shouldComplete })));
+
+    try {
+      const res = await fetch(`${API_BASE}/toggle-all`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: shouldComplete }),
+      });
+
+      if (!res.ok) {
+        setTodos(previousTodos);
+        throw new Error('Cập nhật tất cả công việc thất bại');
+      }
+    } catch (err) {
+      console.error('Toggle all error:', err);
+      setError(err.message);
+    }
   };
 
   // Compute filtered & sorted list
   const filteredTodos = useMemo(() => {
     return todos
       .filter((todo) => {
-        // Filter by tab status
         if (filter === 'active') return !todo.completed;
         if (filter === 'completed') return todo.completed;
         return true; // 'all'
       })
       .filter((todo) => {
-        // Search query filter
         if (!searchQuery.trim()) return true;
         return todo.title.toLowerCase().includes(searchQuery.toLowerCase().trim());
       })
       .sort((a, b) => {
-        // Sorting logic
         if (sortBy === 'date-asc') {
           return new Date(a.createdAt) - new Date(b.createdAt);
         }
@@ -133,7 +217,6 @@ export function useTodos() {
           const priorityMap = { high: 3, medium: 2, low: 1 };
           return (priorityMap[b.priority] || 0) - (priorityMap[a.priority] || 0);
         }
-        // Default: date-desc
         return new Date(b.createdAt) - new Date(a.createdAt);
       });
   }, [todos, filter, searchQuery, sortBy]);
@@ -164,5 +247,8 @@ export function useTodos() {
     clearCompleted,
     toggleAll,
     stats,
+    isLoading,
+    error,
+    refetch: fetchTodos,
   };
 }

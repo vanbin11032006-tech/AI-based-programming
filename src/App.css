@@ -107,14 +107,44 @@ body {
   border-color: var(--accent-color);
 }
 
-@media (max-width: 640px) {
-  .todo-app-page {
-    padding: 0 16px 50px;
-  }
 
-  .todo-app__nav { display: none; }
-  .todo-app__hero { grid-template-columns: 1fr; gap: 38px; padding: 54px 0 68px; }
-  .todo-app__hero-image { height: 310px; }
-  .todo-app__section-heading { align-items: start; }
-  .todo-app__section-meta { font-size: 1rem; }
+.todo-app__status-banner {
+  padding: 12px 18px;
+  margin-bottom: 24px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
+
+.todo-app__status-banner--loading {
+  background-color: var(--bg-hover);
+  color: var(--text-secondary);
+  border: 1px dashed var(--border-color);
+}
+
+.todo-app__status-banner--error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.todo-app__retry-btn {
+  background: transparent;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.todo-app__retry-btn:hover {
+  background: #ef4444;
+  color: #fff;
+}
+

@@ -5,7 +5,7 @@ import { TodoInput } from './components/TodoInput';
 import { FilterBar } from './components/FilterBar';
 import { TodoList } from './components/TodoList';
 import { Stats } from './components/Stats';
-import { Sun, Moon, Dumbbell, ArrowUpRight, Play } from 'lucide-react';
+import { Sun, Moon, Dumbbell, ArrowUpRight, Play, RefreshCw } from 'lucide-react';
 import './styles/variables.css';
 import './App.css';
 
@@ -28,6 +28,9 @@ export function App() {
     clearCompleted,
     toggleAll,
     stats,
+    isLoading,
+    error,
+    refetch,
   } = useTodos();
 
   // Apply dark mode data attribute to document root
@@ -89,6 +92,22 @@ export function App() {
               </div>
               <p className="todo-app__section-meta">01 / 04<br /><small>DAILY FOCUS</small></p>
             </div>
+
+            {/* Trạng thái Loading / Error từ MongoDB */}
+            {isLoading && (
+              <div className="todo-app__status-banner todo-app__status-banner--loading">
+                <span>🔄 Đang tải dữ liệu từ MongoDB Atlas...</span>
+              </div>
+            )}
+
+            {error && (
+              <div className="todo-app__status-banner todo-app__status-banner--error">
+                <span>⚠️ {error}</span>
+                <button type="button" className="todo-app__retry-btn" onClick={refetch}>
+                  <RefreshCw size={12} style={{ display: 'inline', marginRight: 4 }} /> Thử lại
+                </button>
+              </div>
+            )}
 
             <section aria-label="Thêm công việc mới">
               <TodoInput onAddTodo={addTodo} />

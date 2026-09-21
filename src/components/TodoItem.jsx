@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Check, Edit3, Trash2, X, Clock, Flame } from 'lucide-react';
+import { Check, Edit3, Trash2, X, Clock } from 'lucide-react';
 import './TodoItem.css';
 
 /**
