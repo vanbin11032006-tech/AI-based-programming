@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const DB_NAME = 'todoApp';
+const DB_NAME = process.env.MONGODB_DB_NAME || 'todo_db';
 const COLLECTION_NAME = 'todos';
 
 async function getCollection() {
@@ -34,7 +34,7 @@ app.get('/api/todos', async (req, res) => {
     res.json(todos.map(formatTodo));
   } catch (error) {
     console.error('Error fetching todos:', error);
-    res.status(500).json({ error: 'Lỗi khi lấy danh sách công việc từ MongoDB' });
+    res.status(500).json({ error: 'Lỗi khi lấy danh sách công việc từ MongoDB: ' + error.message });
   }
 });
 
@@ -62,7 +62,7 @@ app.post('/api/todos', async (req, res) => {
     });
   } catch (error) {
     console.error('Error adding todo:', error);
-    res.status(500).json({ error: 'Lỗi khi thêm công việc mới' });
+    res.status(500).json({ error: 'Lỗi khi thêm công việc mới vào MongoDB: ' + error.message });
   }
 });
 
@@ -99,7 +99,7 @@ app.put('/api/todos/:id', async (req, res) => {
   }
 });
 
-// 4. DELETE /api/todos/completed - Xóa tất cả công việc đã hoàn thành (đưa lên trước :id route)
+// 4. DELETE /api/todos/completed - Xóa tất cả công việc đã hoàn thành
 app.delete('/api/todos/completed', async (req, res) => {
   try {
     const collection = await getCollection();
