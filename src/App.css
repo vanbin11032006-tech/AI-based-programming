@@ -9,28 +9,22 @@ body {
   padding: 0;
   font-family: var(--font-family);
   background-color: var(--bg-primary);
+  background-image: linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 48px 48px;
   color: var(--text-primary);
   transition: background-color var(--transition-normal), color var(--transition-normal);
   min-height: 100vh;
 }
 
 .todo-app-page {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 40px 16px;
+  padding: 0 24px 80px;
   min-height: 100vh;
 }
 
-.todo-app-card {
+.todo-app-shell {
   width: 100%;
-  max-width: 680px;
-  background-color: var(--bg-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-color);
-  padding: 32px;
-  transition: background-color var(--transition-normal), border-color var(--transition-normal);
+  max-width: 1180px;
+  margin: 0 auto;
 }
 
 .todo-app__header {
@@ -38,33 +32,60 @@ body {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
-  padding-bottom: 20px;
+  padding: 24px 0;
   border-bottom: 1px solid var(--border-color);
 }
 
 .todo-app__brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
 }
 
 .todo-app__logo {
   color: var(--accent-color);
 }
 
+.todo-app__wordmark { color: var(--text-primary); font-size: 1.2rem; font-weight: 900; letter-spacing: .2em; }
+.todo-app__wordmark span { color: var(--accent-color); }
+.todo-app__nav { display: flex; gap: 34px; margin-left: auto; margin-right: 32px; }
+.todo-app__nav a { color: var(--text-secondary); font-size: .72rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; }
+.todo-app__nav a:hover { color: var(--accent-color); }
+
 .todo-app__title {
   margin: 0;
-  font-size: 1.6rem;
-  font-weight: 800;
+  font-size: clamp(3.4rem, 8vw, 7.5rem);
+  line-height: .84;
+  font-weight: 900;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: -.07em;
+  margin: 22px 0 28px;
 }
 
+.todo-app__title em, .todo-app__section-heading h2 em { color: var(--accent-color); font-style: normal; }
+
 .todo-app__subtitle {
-  margin: 4px 0 0 0;
-  font-size: 0.82rem;
+  margin: 0;
+  max-width: 450px;
+  font-size: .9rem;
+  line-height: 1.7;
   color: var(--text-secondary);
 }
+
+.todo-app__hero { display: grid; grid-template-columns: .9fr 1.1fr; gap: 72px; align-items: center; padding: 74px 0 96px; }
+.todo-app__eyebrow { color: var(--accent-color); font-size: .68rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+.todo-app__eyebrow span { display: inline-block; width: 24px; height: 2px; margin-right: 8px; vertical-align: middle; background: var(--accent-color); }
+.todo-app__hero-cta { display: inline-flex; align-items: center; gap: 14px; margin-top: 32px; padding: 14px 21px; color: #141414; background: var(--accent-color); font-size: .74rem; font-weight: 900; letter-spacing: .1em; text-decoration: none; text-transform: uppercase; }
+.todo-app__hero-cta:hover { background: var(--accent-hover); }
+.todo-app__hero-image { position: relative; height: 480px; overflow: hidden; background: #272725; }
+.todo-app__hero-image::after { position: absolute; inset: 0; content: ''; background: linear-gradient(135deg, rgba(216,240,77,.08), transparent 50%); pointer-events: none; }
+.todo-app__hero-image img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.12); }
+.todo-app__image-note { position: absolute; right: 18px; bottom: 18px; display: flex; align-items: center; gap: 8px; color: var(--accent-color); font-size: .65rem; font-weight: 800; letter-spacing: .12em; }
+.todo-app__workspace { padding: 70px 0 0; border-top: 1px solid var(--border-color); }
+.todo-app__section-heading { display: flex; justify-content: space-between; align-items: end; margin-bottom: 38px; }
+.todo-app__section-heading h2 { margin: 14px 0 0; color: var(--text-primary); font-size: clamp(1.7rem, 3vw, 3rem); line-height: .95; letter-spacing: -.05em; }
+.todo-app__section-meta { color: var(--accent-color); font-size: 1.4rem; font-weight: 900; line-height: 1; text-align: right; }
+.todo-app__section-meta small { color: var(--text-muted); font-size: .55rem; letter-spacing: .15em; }
 
 .todo-app__theme-toggle {
   display: inline-flex;
@@ -88,18 +109,12 @@ body {
 
 @media (max-width: 640px) {
   .todo-app-page {
-    padding: 16px 8px;
+    padding: 0 16px 50px;
   }
 
-  .todo-app-card {
-    padding: 20px 16px;
-  }
-
-  .todo-app__title {
-    font-size: 1.3rem;
-  }
-
-  .todo-app__subtitle {
-    font-size: 0.75rem;
-  }
+  .todo-app__nav { display: none; }
+  .todo-app__hero { grid-template-columns: 1fr; gap: 38px; padding: 54px 0 68px; }
+  .todo-app__hero-image { height: 310px; }
+  .todo-app__section-heading { align-items: start; }
+  .todo-app__section-meta { font-size: 1rem; }
 }
